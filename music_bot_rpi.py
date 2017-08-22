@@ -56,7 +56,7 @@ class VoiceState:
     def audio_player_task(self):
         while True:
             self.play_next_song.clear()
-            self.current = yield from self.songs.get()
+             yield from self.current = self.songs.get()
             yield from self.bot.send_message(self.current.channel, 'Now playing ' + str(self.current))
             self.current.player.start()
             yield from self.play_next_song.wait()
