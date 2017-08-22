@@ -1,11 +1,14 @@
-import discord
 import asyncio
+import discord
 from discord.ext import commands
 
 if not discord.opus.is_loaded():
+    # the 'opus' library here is opus.dll on windows
+    # or libopus.so on linux in the current directory
+    # you should replace this with the location the
+    # opus library is located in and with the proper filename.
+    # note that on windows this DLL is automatically provided for you
     discord.opus.load_opus('opus')
-
-bot = commands.Bot(command_prefix='?')
 
 class VoiceEntry:
     def __init__(self, message, player):
@@ -18,7 +21,7 @@ class VoiceEntry:
         duration = self.player.duration
         if duration:
             fmt = fmt + ' [length: {0[0]}m {0[1]}s]'.format(divmod(duration, 60))
-        return fmt.format(self.player, self.duration)
+        return fmt.format(self.player, self.requester)
 
 class VoiceState:
     def __init__(self, bot):
@@ -27,11 +30,11 @@ class VoiceState:
         self.bot = bot
         self.play_next_song = asyncio.Event()
         self.songs = asyncio.Queue()
-        self.skip_votes = set()
+        self.skip_votes = set() # a set of user_ids that voted
         self.audio_player = self.bot.loop.create_task(self.audio_player_task())
 
     def is_playing(self):
-        if self.voice is None or self.current is Node:
+        if self.voice is None or self.current is None:
             return False
 
         player = self.current.player
@@ -48,7 +51,6 @@ class VoiceState:
 
     def toggle_next(self):
         self.bot.loop.call_soon_threadsafe(self.play_next_song.set)
-
 
     async def audio_player_task(self):
         while True:
@@ -234,27 +236,11 @@ class Music:
             skip_count = len(state.skip_votes)
             await self.bot.say('Now playing {} [skips: {}/3]'.format(state.current, skip_count))
 
+bot = commands.Bot(command_prefix=commands.when_mentioned_or('$'), description='A playlist example for discord.py')
+bot.add_cog(Music(bot))
+
 @bot.event
 async def on_ready():
-    print('Logged in as')
-    print(bot.user.name)
-    print(bot.user.id)
-    print('------')
+    print('Logged in as:\n{0} (ID: {0.id})'.format(bot.user))
 
-@bot.command()
-async def bitch(*target : str):
-	members = bot.get_all_members();
-	member_name = ' '.join(target)
-	target_mem = None
-	for member in members:
-		if (not str(member).find(member_name)):
-			target_mem = member
-
-	if (target_mem is not None):
-		await bot.send_message(target_mem, "you a bitch")
-	else:
-		await bot.say('no member found by the name of ' + str(member_name))
-
-
-
-bot.run('MzI4Mjc3OTExMzIzMDE3MjE3.DDBkLA.-g1gqxBhl_EGicQMr2VsJfL3T34')
+bot.run('MzQ5NDE1MTY5NDk3MTA0Mzg2.DH1Mvg.foqZHdsq0wDIfSsvUbVkZsYPO5c')
